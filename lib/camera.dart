@@ -5,7 +5,6 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' show join;
 import 'package:path_provider/path_provider.dart';
-import 'package:tflite/tflite.dart';
 
 Future<void> main() async {
   // Ensure that plugin services are initialized so that `availableCameras()`
@@ -20,7 +19,6 @@ Future<void> main() async {
 
   runApp(
     MaterialApp(
-      debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
       home: TakePictureScreen(
         // Pass the appropriate camera to the TakePictureScreen widget.
@@ -73,10 +71,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Scanner'),
-        backgroundColor: Colors.green,
-      ),
+      appBar: AppBar(title: Text('Take a picture')),
       // Wait until the controller is initialized before displaying the
       // camera preview. Use a FutureBuilder to display a loading spinner
       // until the controller has finished initializing.
@@ -118,7 +113,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => DisplayPictureScreen(imagePaths: path),
+                builder: (context) => DisplayPictureScreen(imagePath: path),
               ),
             );
           } catch (e) {
@@ -132,91 +127,18 @@ class TakePictureScreenState extends State<TakePictureScreen> {
 }
 
 // A widget that displays the picture taken by the user.
-class DisplayPictureScreen extends StatefulWidget {
-  final String imagePaths;
+class DisplayPictureScreen extends StatelessWidget {
+  final String imagePath;
 
-  const DisplayPictureScreen({Key key, this.imagePaths}) : super(key: key);
-
-
-  @override
-  _DisplayPictureScreenState createState() => _DisplayPictureScreenState();
-}
-
-class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
-  List _outputs;
-  bool _loading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loading = true;
-
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => pickImage());
-
-    loadModel().then((value) {
-      setState(() {
-        _loading = false;
-      });
-    });
-  }
+  const DisplayPictureScreen({Key key, this.imagePath}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Detecting...')),
+      appBar: AppBar(title: Text('Display the Picture')),
       // The image is stored as a file on the device. Use the `Image.file`
       // constructor with the given path to display the image.
-      body: Column(
-        children: <Widget>[
-          Image.file(File(widget.imagePaths)),
-          _outputs != null
-              ? Text(
-                  "${_outputs[0]["label"].toString().substring(2)}",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20.0,
-                  ),
-                )
-              : Container()
-        ],
-      ),
+      body: Image.file(File(imagePath)),
     );
-  }
-
-  pickImage() async {
-    var image = File(widget.imagePaths);
-    if (image == null) return null;
-    setState(() {
-      _loading = true;
-    });
-    classifyImage(image);
-  }
-
-  classifyImage(File image) async {
-    var output = await Tflite.runModelOnImage(
-      path: image.path,
-      numResults: 2,
-      threshold: 0.5,
-      imageMean: 127.5,
-      imageStd: 127.5,
-    );
-    setState(() {
-      _loading = false;
-      _outputs = output;
-    });
-  }
-
-  loadModel() async {
-    await Tflite.loadModel(
-      model: "assets/model_unquant.tflite",
-      labels: "assets/labels.txt",
-    );
-  }
-
-  @override
-  void dispose() {
-    Tflite.close();
-    super.dispose();
   }
 }
