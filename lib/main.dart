@@ -145,6 +145,7 @@ class DisplayPictureScreen extends StatefulWidget {
 class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
   List _outputs;
   bool _loading = false;
+  String outputTypeText;
 
   @override
   void initState() {
@@ -172,7 +173,8 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
           Image.file(File(widget.imagePaths)),
           _outputs != null
               ? Text(
-                  "${_outputs[0]["label"].toString().substring(2)}",
+                  //"${_outputs[0]["label"].toString().substring(2)}",
+                  "$outputTypeText",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20.0,
@@ -204,6 +206,26 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
     setState(() {
       _loading = false;
       _outputs = output;
+      outputTypeText = _outputs[0]["label"].toString().substring(2);
+
+      switch(outputTypeText){
+        case "Vegetable-Fruits":
+          outputTypeText = "Vegan / Vegetarian / Pescatarian";
+          break;
+        case "Dairy":
+          outputTypeText = "Vegetarian / Pescatarian";
+          break;
+        case "Egg":
+          outputTypeText = "Vegetarian / Pescatarian";
+          break;
+        case "Seafood":
+          outputTypeText = "Pescatarian";
+          break;
+        default: {
+          outputTypeText = "Other";
+        }
+        break;
+      }
     });
   }
 
