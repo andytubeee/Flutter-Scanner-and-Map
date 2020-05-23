@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
@@ -56,7 +57,7 @@ class TakePictureScreenState extends State<TakePictureScreen> {
       // Get a specific camera from the list of available cameras.
       widget.camera,
       // Define the resolution to use.
-      ResolutionPreset.ultraHigh,
+      ResolutionPreset.max,
     );
 
     // Next, initialize the controller. This returns a Future.
@@ -137,7 +138,6 @@ class DisplayPictureScreen extends StatefulWidget {
 
   const DisplayPictureScreen({Key key, this.imagePaths}) : super(key: key);
 
-
   @override
   _DisplayPictureScreenState createState() => _DisplayPictureScreenState();
 }
@@ -145,15 +145,14 @@ class DisplayPictureScreen extends StatefulWidget {
 class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
   List _outputs;
   bool _loading = false;
-  String outputTypeText;
+  var outputTypeText;
 
   @override
   void initState() {
     super.initState();
     _loading = true;
 
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => pickImage());
+    WidgetsBinding.instance.addPostFrameCallback((_) => pickImage());
 
     loadModel().then((value) {
       setState(() {
@@ -165,23 +164,38 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Detecting...'), backgroundColor: Colors.green,),
+      appBar: AppBar(
+        title: Text('Detecting...'),
+        backgroundColor: Colors.green,
+      ),
       // The image is stored as a file on the device. Use the `Image.file`
       // constructor with the given path to display the image.
       body: Container(
         color: Colors.greenAccent,
         child: Column(
           children: <Widget>[
-            Image.file(File(widget.imagePaths)),
-            SizedBox(height: 9,),
+            Image.file(
+              File(widget.imagePaths),
+              height: 650,
+              width: MediaQuery.of(context).size.width,
+            ),
+            SizedBox(
+              height: 9,
+            ),
             _outputs != null
                 ? Text(
                     //"${_outputs[0]["label"].toString().substring(2)}",
-                    "$outputTypeText",
+                    outputTypeText +
+                        " \nAccuracy: " +
+                        (double.parse(_outputs[0]["confidence"].toString()) *
+                                100)
+                            .toString() +
+                        "%",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20.0,
                     ),
+                    textAlign: TextAlign.center,
                   )
                 : Container()
           ],
@@ -210,11 +224,13 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
     setState(() {
       _loading = false;
       _outputs = output;
-      outputTypeText = _outputs[0]["label"].toString().substring(2);
+      outputTypeText = _outputs[0]["label"].toString().substring(2).toString().trim();
 
-      switch(outputTypeText){
+      switch (outputTypeText) {
         case "Vegetable-Fruits":
-          outputTypeText = "Vegan / Vegetarian / Pescatarian";
+          {
+            outputTypeText = "Vegan / Vegetarian / Pescatarian";
+          }
           break;
         case "Dairy":
           outputTypeText = "Vegetarian / Pescatarian";
@@ -225,8 +241,8 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
         case "Seafood":
           outputTypeText = "Pescatarian";
           break;
-        default: {
-          outputTypeText = "Other";
+        default:{
+          outputTypeText = "Others";
         }
         break;
       }
