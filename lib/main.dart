@@ -165,23 +165,26 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Detecting...')),
+      appBar: AppBar(title: Text('Detecting...'), backgroundColor: Colors.green,),
       // The image is stored as a file on the device. Use the `Image.file`
       // constructor with the given path to display the image.
-      body: Column(
-        children: <Widget>[
-          Image.file(File(widget.imagePaths)),
-          _outputs != null
-              ? Text(
-                  //"${_outputs[0]["label"].toString().substring(2)}",
-                  "$outputTypeText",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20.0,
-                  ),
-                )
-              : Container()
-        ],
+      body: Container(
+        color: Colors.greenAccent,
+        child: Column(
+          children: <Widget>[
+            Image.file(File(widget.imagePaths)),
+            _outputs != null
+                ? Text(
+                    //"${_outputs[0]["label"].toString().substring(2)}",
+                    "$outputTypeText",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20.0,
+                    ),
+                  )
+                : Container()
+          ],
+        ),
       ),
     );
   }
