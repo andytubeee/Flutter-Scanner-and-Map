@@ -173,6 +173,7 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
         child: Column(
           children: <Widget>[
             Image.file(File(widget.imagePaths)),
+            SizedBox(height: 9,),
             _outputs != null
                 ? Text(
                     //"${_outputs[0]["label"].toString().substring(2)}",
