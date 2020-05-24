@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' show join;
 import 'package:path_provider/path_provider.dart';
 import 'package:tflite/tflite.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 Future<void> main() async {
   // Ensure that plugin services are initialized so that `availableCameras()`
@@ -93,43 +94,149 @@ class TakePictureScreenState extends State<TakePictureScreen> {
           }
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.camera_alt),
-        // Provide an onPressed callback.
-        onPressed: () async {
-          // Take the Picture in a try / catch block. If anything goes wrong,
-          // catch the error.
-          try {
-            // Ensure that the camera is initialized.
-            await _initializeControllerFuture;
+      floatingActionButton: Container(
+        margin: EdgeInsets.only(left: 35),
+        child: Row(
+          children: [
+            FloatingActionButton(
+              child: Icon(Icons.camera_alt),
+              // Provide an onPressed callback.
+              onPressed: () async {
+                // Take the Picture in a try / catch block. If anything goes wrong,
+                // catch the error.
+                try {
+                  // Ensure that the camera is initialized.
+                  await _initializeControllerFuture;
 
-            // Construct the path where the image should be saved using the
-            // pattern package.
-            final path = join(
-              // Store the picture in the temp directory.
-              // Find the temp directory using the `path_provider` plugin.
-              (await getTemporaryDirectory()).path,
-              '${DateTime.now()}.png',
-            );
+                  // Construct the path where the image should be saved using the
+                  // pattern package.
+                  final path = join(
+                    // Store the picture in the temp directory.
+                    // Find the temp directory using the `path_provider` plugin.
+                    (await getTemporaryDirectory()).path,
+                    '${DateTime.now()}.png',
+                  );
 
-            // Attempt to take a picture and log where it's been saved.
-            await _controller.takePicture(path);
+                  // Attempt to take a picture and log where it's been saved.
+                  await _controller.takePicture(path);
 
-            // If the picture was taken, display it on a new screen.
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => DisplayPictureScreen(imagePaths: path),
+                  // If the picture was taken, display it on a new screen.
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          DisplayPictureScreen(imagePaths: path),
+                    ),
+                  );
+                } catch (e) {
+                  // If an error occurs, log the error to the console.
+                  print(e);
+                }
+              },
+            ),
+            SizedBox(
+              width: 210,
+            ),
+            RaisedButton(
+              color: Colors.green,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => Gmap(),
+                  ),
+                );
+              },
+              child: Row(
+                children: <Widget>[
+                  Icon(
+                    Icons.map,
+                    color: Colors.greenAccent,
+                  ),
+                  SizedBox(
+                    width: 5,
+                  ),
+                  Text("Map")
+                ],
               ),
-            );
-          } catch (e) {
-            // If an error occurs, log the error to the console.
-            print(e);
-          }
-        },
+            )
+          ],
+        ),
       ),
     );
   }
+}
+
+class Gmap extends StatefulWidget {
+  @override
+  _GmapState createState() => _GmapState();
+}
+
+class _GmapState extends State<Gmap> {
+  Completer<GoogleMapController> _controller = Completer();
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.green,
+          actions: <Widget>[Container(
+            margin: EdgeInsets.only(right: 338),
+            child: IconButton(icon: Icon(Icons.arrow_back), onPressed: () {
+              Navigator.pop(context);
+            },),
+          )],
+        ),
+        body: Stack(
+          children: <Widget>[
+            _googleMap(context),
+            // new Container(
+            //   margin: EdgeInsets.only(top: 655, left: 10),
+            //     child: new FloatingActionButton.extended(
+            //   onPressed: () {
+            //   },
+            //   label: Text("Back"),
+            //   icon: Icon(Icons.arrow_left),
+            //   backgroundColor: Colors.green,
+            // ))
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _googleMap(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height,
+      width: MediaQuery.of(context).size.width,
+      child: GoogleMap(
+        mapType: MapType.normal,
+        initialCameraPosition:
+            CameraPosition(target: LatLng(43.4643, -80.5204), zoom: 10),
+        onMapCreated: (GoogleMapController controller) {
+          _controller.complete(controller);
+        },
+        markers: {homeMarker, plasticGarbage1, pescatarian},
+      ),
+    );
+  }
+
+  Marker homeMarker = Marker(
+      markerId: MarkerId("home"),
+      position: LatLng(43.4643, -80.5204),
+      infoWindow: InfoWindow(title: "Vegan"),
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen));
+  Marker plasticGarbage1 = Marker(
+      markerId: MarkerId("plasticGarbage1"),
+      position: LatLng(43.4722286, -80.5908138),
+      infoWindow: InfoWindow(title: "Vegetarian"),
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan));
+  Marker pescatarian = Marker(
+      markerId: MarkerId("plasticGarbage1"),
+      position: LatLng(43.453180, -80.549796),
+      infoWindow: InfoWindow(title: "Pescatarian"),
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue));
 }
 
 // A widget that displays the picture taken by the user.
@@ -224,7 +331,8 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
     setState(() {
       _loading = false;
       _outputs = output;
-      outputTypeText = _outputs[0]["label"].toString().substring(2).toString().trim();
+      outputTypeText =
+          _outputs[0]["label"].toString().substring(2).toString().trim();
 
       switch (outputTypeText) {
         case "Vegetable-Fruits":
@@ -241,10 +349,11 @@ class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
         case "Seafood":
           outputTypeText = "Pescatarian";
           break;
-        default:{
-          outputTypeText = "Others";
-        }
-        break;
+        default:
+          {
+            outputTypeText = "Others";
+          }
+          break;
       }
     });
   }
